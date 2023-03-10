@@ -5,19 +5,19 @@
 package duplicacy
 
 import (
-	"context"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
-	"strings"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
-	"path/filepath"
 
 	"golang.org/x/oauth2"
 )
@@ -50,18 +50,18 @@ type OneDriveClient struct {
 	MaxBatchReqs int
 
 	RefreshTokenURL string
-	APIURL string
+	APIURL          string
 
-	BatchURL string
+	BatchURL            string
 	StripBatchPrefixURL string
 }
 
 func NewOneDriveClient(
-	tokenFile string, 
-	isBusiness bool, 
-	max_batch_requests int, 
-	client_id string, 
-	client_secret string, 
+	tokenFile string,
+	isBusiness bool,
+	max_batch_requests int,
+	client_id string,
+	client_secret string,
 	drive_id string,
 ) (*OneDriveClient, error) {
 
@@ -79,22 +79,22 @@ func NewOneDriveClient(
 		HTTPClient:   http.DefaultClient,
 		TokenFile:    tokenFile,
 		Token:        token,
-		OAConfig:	  nil,
+		OAConfig:     nil,
 		TokenLock:    &sync.Mutex{},
 		IsBusiness:   isBusiness,
 		MaxBatchReqs: max_batch_requests,
 	}
 
-	if (client_id != "") {
-	    oneOauthConfig := oauth2.Config{
-	        ClientID: 		client_id,
-	        ClientSecret: 	client_secret,
-	        Scopes:       	[]string{"Files.ReadWrite", "offline_access"},
-	        Endpoint: oauth2.Endpoint{
-	            AuthURL:  "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
-	            TokenURL: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
-	        },
-	    }
+	if client_id != "" {
+		oneOauthConfig := oauth2.Config{
+			ClientID:     client_id,
+			ClientSecret: client_secret,
+			Scopes:       []string{"Files.ReadWrite", "offline_access"},
+			Endpoint: oauth2.Endpoint{
+				AuthURL:  "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
+				TokenURL: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+			},
+		}
 
 		client.OAConfig = &oneOauthConfig
 	}
@@ -103,7 +103,7 @@ func NewOneDriveClient(
 		client.RefreshTokenURL = "https://duplicacy.com/odb_refresh"
 		client.APIURL = "https://graph.microsoft.com/v1.0/me/drive"
 		if drive_id != "" {
-			client.APIURL = "https://graph.microsoft.com/v1.0/drives/"+drive_id
+			client.APIURL = "https://graph.microsoft.com/v1.0/drives/" + drive_id
 		}
 		client.BatchURL = "https://graph.microsoft.com/v1.0/$batch"
 		client.StripBatchPrefixURL = "https://graph.microsoft.com/v1.0/"
@@ -154,7 +154,7 @@ func (client *OneDriveClient) call(url string, method string, input interface{},
 
 		if reader, ok := inputReader.(*RateLimitedReader); ok {
 			request.ContentLength = reader.Length()
-			request.Header.Set("Content-Range", fmt.Sprintf("bytes 0-%d/%d", reader.Length() - 1, reader.Length()))
+			request.Header.Set("Content-Range", fmt.Sprintf("bytes 0-%d/%d", reader.Length()-1, reader.Length()))
 		}
 
 		if url != client.RefreshTokenURL {
@@ -218,10 +218,10 @@ func (client *OneDriveClient) call(url string, method string, input interface{},
 		} else if response.StatusCode == 409 {
 			return nil, 0, OneDriveError{Status: response.StatusCode, Message: "Conflict"}
 		} else if response.StatusCode >= 400 && response.StatusCode != 404 {
-			delay := int((rand.Float32() * 0.5 + 0.5) * 1000.0 * float32(backoff))
+			delay := int((rand.Float32()*0.5 + 0.5) * 1000.0 * float32(backoff))
 			if backoffList, found := response.Header["Retry-After"]; found && len(backoffList) > 0 {
 				retryAfter, _ := strconv.Atoi(backoffList[0])
-				if retryAfter * 1000 > delay {
+				if retryAfter*1000 > delay {
 					delay = retryAfter * 1000
 				}
 			}
@@ -254,7 +254,7 @@ func (client *OneDriveClient) RefreshToken(force bool) (err error) {
 		return nil
 	}
 
-	if (client.OAConfig == nil) {
+	if client.OAConfig == nil {
 		readCloser, _, err := client.call(client.RefreshTokenURL, "POST", client.Token, "")
 		if err != nil {
 			return fmt.Errorf("failed to refresh the access token: %v", err)
@@ -268,11 +268,11 @@ func (client *OneDriveClient) RefreshToken(force bool) (err error) {
 	} else {
 		ctx := context.Background()
 		tokenSource := client.OAConfig.TokenSource(ctx, client.Token)
-	    token, err := tokenSource.Token()
-	    if err != nil {
-	        return fmt.Errorf("failed to refresh the access token: %v", err)
-	    }
-	    client.Token = token
+		token, err := tokenSource.Token()
+		if err != nil {
+			return fmt.Errorf("failed to refresh the access token: %v", err)
+		}
+		client.Token = token
 	}
 
 	description, err := json.Marshal(client.Token)
@@ -288,7 +288,6 @@ func (client *OneDriveClient) RefreshToken(force bool) (err error) {
 	return nil
 }
 
-
 type OneDriveListReqItem struct {
 	Path string
 	URL  string
@@ -302,14 +301,14 @@ type OneDriveEntry struct {
 }
 
 type ErrorResponse struct {
-	Code     string	`json:"code"`
-	Message  string `json:"message"`
+	Code    string `json:"code"`
+	Message string `json:"message"`
 }
 
 type OneDriveListEntriesOutput struct {
 	Entries  []OneDriveEntry `json:"value"`
 	NextLink string          `json:"@odata.nextLink"`
-	Error	 ErrorResponse	 `json:"error"`
+	Error    ErrorResponse   `json:"error"`
 }
 
 func (client *OneDriveClient) ListEntries(path string) ([]OneDriveEntry, error) {
@@ -368,34 +367,32 @@ func (client *OneDriveClient) ListPathToURL(path string) (url string) {
 	return url
 }
 
-
 type BatchRequestItem struct {
-	Id 		string	`json:"id"`
-	Method	string	`json:"method"`
-	URL		string	`json:"url"`
+	Id     string `json:"id"`
+	Method string `json:"method"`
+	URL    string `json:"url"`
 }
 
 type BatchRequest struct {
-	Requests	[]BatchRequestItem `json:"requests"`
+	Requests []BatchRequestItem `json:"requests"`
 }
 
 type BatchResponseItem struct {
-	Id 		string						`json:"id"`
-	Status	int							`json:"status"`
-	Headers	map[string]string			`json:"headers"`
-	Body	OneDriveListEntriesOutput	`json:"body"`
+	Id      string                    `json:"id"`
+	Status  int                       `json:"status"`
+	Headers map[string]string         `json:"headers"`
+	Body    OneDriveListEntriesOutput `json:"body"`
 }
 
 type BatchResponse struct {
 	Responses []BatchResponseItem `json:"responses"`
 }
 
-
 func (client *OneDriveClient) ListEntriesBatch(
-	prefix string, 
+	prefix string,
 	batchReqs []OneDriveListReqItem,
 ) (
-	entriesPerReq []OneDriveListEntriesOutput, 
+	entriesPerReq []OneDriveListEntriesOutput,
 	newReqs []OneDriveListReqItem,
 	err error,
 ) {
@@ -412,13 +409,13 @@ func (client *OneDriveClient) ListEntriesBatch(
 
 	if client.IsBusiness && nReqs > 1 {
 		// OneDrive Business uses Graph API which supports batching
-	    breq := BatchRequest{}
-	    breq.Requests = make([]BatchRequestItem, len(batchReqs), len(batchReqs))
-	    for i, req := range batchReqs {
-		    breq.Requests[i].Id = strconv.Itoa(i+1)
-		    breq.Requests[i].Method = "GET"
-		    breq.Requests[i].URL = req.URL[len(client.StripBatchPrefixURL):]
-	    }
+		breq := BatchRequest{}
+		breq.Requests = make([]BatchRequestItem, len(batchReqs), len(batchReqs))
+		for i, req := range batchReqs {
+			breq.Requests[i].Id = strconv.Itoa(i + 1)
+			breq.Requests[i].Method = "GET"
+			breq.Requests[i].URL = req.URL[len(client.StripBatchPrefixURL):]
+		}
 		tracestr := fmt.Sprintf("Batch payload: %d requests", len(breq.Requests))
 		for _, req := range breq.Requests {
 			tracestr = tracestr + fmt.Sprintf("\n\t\t%s %s", req.Method, req.URL)
@@ -431,7 +428,7 @@ func (client *OneDriveClient) ListEntriesBatch(
 		}
 
 		defer readCloser.Close()
-	
+
 		bresp := &BatchResponse{}
 
 		if err = json.NewDecoder(readCloser).Decode(&bresp); err != nil {
@@ -442,8 +439,8 @@ func (client *OneDriveClient) ListEntriesBatch(
 		}
 		throttleDelay := 0
 
-	    for _, resp := range bresp.Responses {
-		    nresp, err := strconv.Atoi(resp.Id)
+		for _, resp := range bresp.Responses {
+			nresp, err := strconv.Atoi(resp.Id)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -453,9 +450,9 @@ func (client *OneDriveClient) ListEntriesBatch(
 				entriesPerReq[nresp] = resp.Body
 				if entriesPerReq[nresp].NextLink != "" {
 					newReqs = append(
-						newReqs, 
+						newReqs,
 						OneDriveListReqItem{
-							Path: batchReqs[nresp].Path, 
+							Path: batchReqs[nresp].Path,
 							URL:  entriesPerReq[nresp].NextLink,
 						},
 					)
@@ -463,7 +460,7 @@ func (client *OneDriveClient) ListEntriesBatch(
 			} else if resp.Status == 429 { // throttled
 				var backoff int
 				backoffList, found := resp.Headers["Retry-After"]
-				if found && len(backoffList)>0 {
+				if found && len(backoffList) > 0 {
 					backoff, _ = strconv.Atoi(backoffList)
 					backoff *= 1000 // s to ms
 				} else {
@@ -475,7 +472,7 @@ func (client *OneDriveClient) ListEntriesBatch(
 				LOG_INFO("ONEDRIVE_RETRY", "Batch item response code: %d; suggested retry is %d milliseconds", resp.Status, backoff)
 				// Retry the same URL
 				newReqs = append(newReqs, batchReqs[nresp])
-			} else if resp.Status == 400 || resp.Status == 401 { 
+			} else if resp.Status == 400 || resp.Status == 401 {
 				// Some errors are expected, e.g. unauthorized / expired token
 				// Retry the same URL
 				newReqs = append(newReqs, batchReqs[nresp])
@@ -484,9 +481,9 @@ func (client *OneDriveClient) ListEntriesBatch(
 				//LOG_TRACE("ONEDRIVE_BATCH", "Unexpected batch response error %d: %s / %s", resp.Status, http.StatusText(resp.Status), errmsg)
 				return nil, nil, fmt.Errorf("Unexpected batch response error %d: %s / %s", resp.Status, http.StatusText(resp.Status), errmsg)
 			}
-	    }
+		}
 
-   		if throttleDelay > 0 {
+		if throttleDelay > 0 {
 			LOG_INFO("ONEDRIVE_RETRY", "Batch request throttled; retry after %d milliseconds", throttleDelay)
 			time.Sleep(time.Duration(throttleDelay) * time.Millisecond)
 			throttleDelay = 0
@@ -507,9 +504,9 @@ func (client *OneDriveClient) ListEntriesBatch(
 			}
 			if entriesPerReq[i].NextLink != "" {
 				newReqs = append(
-					newReqs, 
+					newReqs,
 					OneDriveListReqItem{
-						Path: batchReqs[i].Path, 
+						Path: batchReqs[i].Path,
 						URL:  entriesPerReq[i].NextLink,
 					},
 				)
@@ -523,7 +520,9 @@ func (client *OneDriveClient) ListEntriesBatch(
 func (client *OneDriveClient) GetFileInfo(path string) (string, bool, int64, error) {
 
 	url := client.APIURL + "/root:/" + path
-	if path == "" { url = client.APIURL + "/root" }
+	if path == "" {
+		url = client.APIURL + "/root"
+	}
 	url += "?select=id,name,size,folder"
 
 	readCloser, _, err := client.call(url, "GET", 0, "")
@@ -557,7 +556,7 @@ func (client *OneDriveClient) UploadFile(path string, content []byte, rateLimit 
 
 	// Upload file using the simple method; this is only possible for OneDrive Personal or if the file
 	// is smaller than 4MB for OneDrive Business
-	if !client.IsBusiness || (client.TestMode && rand.Int() % 2 == 0) {
+	if !client.IsBusiness || (client.TestMode && rand.Int()%2 == 0) {
 		url := client.APIURL + "/root:/" + path + ":/content"
 
 		readCloser, _, err := client.call(url, "PUT", CreateRateLimitedReader(content, rateLimit), "application/octet-stream")
@@ -582,17 +581,17 @@ func (client *OneDriveClient) CreateUploadSession(path string) (uploadURL string
 
 	type CreateUploadSessionItem struct {
 		ConflictBehavior string `json:"@microsoft.graph.conflictBehavior"`
-		Name string `json:"name"`
+		Name             string `json:"name"`
 	}
 
-	input := map[string]interface{} {
-		"item": CreateUploadSessionItem {
+	input := map[string]interface{}{
+		"item": CreateUploadSessionItem{
 			ConflictBehavior: "replace",
-			Name: filepath.Base(path),
+			Name:             filepath.Base(path),
 		},
 	}
 
-	readCloser, _, err := client.call(client.APIURL + "/root:/" + path + ":/createUploadSession", "POST", input, "application/json")
+	readCloser, _, err := client.call(client.APIURL+"/root:/"+path+":/createUploadSession", "POST", input, "application/json")
 	if err != nil {
 		return "", err
 	}

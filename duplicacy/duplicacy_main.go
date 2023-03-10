@@ -1009,17 +1009,17 @@ func checkSnapshots(context *cli.Context) {
 	) == "true"
 
 	backupManager.SnapshotManager.CheckSnapshots(
-		id, 
-		revisions, 
-		tag, 
-		showStatistics, 
-		showTabular, 
-		checkFiles, 
-		checkChunks, 
-		searchFossils, 
-		resurrect, 
-		rewrite, 
-		threads, 
+		id,
+		revisions,
+		tag,
+		showStatistics,
+		showTabular,
+		checkFiles,
+		checkChunks,
+		searchFossils,
+		resurrect,
+		rewrite,
+		threads,
 		persist,
 		checkReadsChunkFileListFromCacheOnly,
 	)
@@ -1059,7 +1059,6 @@ func printFile(context *cli.Context) {
 	if context.String("id") != "" {
 		snapshotID = context.String("id")
 	}
-
 
 	backupManager := duplicacy.CreateBackupManager(preference.SnapshotID, storage, repository, password, "", "", false)
 	duplicacy.SavePassword(*preference, "password", password)
@@ -1254,18 +1253,18 @@ func pruneSnapshots(context *cli.Context) {
 		*preference, "prune_reads_chunk_filelist_from_cache_only",
 	) == "true"
 
-    backupManager.SnapshotManager.PruneSnapshots(
-    	selfID, 
-    	snapshotID, 
-    	revisions, 
-    	tags, 
-    	retentions,
-		exhaustive, 
-		exclusive, 
-		ignoredIDs, 
-		dryRun, 
-		deleteOnly, 
-		collectOnly, 
+	backupManager.SnapshotManager.PruneSnapshots(
+		selfID,
+		snapshotID,
+		revisions,
+		tags,
+		retentions,
+		exhaustive,
+		exclusive,
+		ignoredIDs,
+		dryRun,
+		deleteOnly,
+		collectOnly,
 		threads,
 		pruneReadsChunkFileListFromCacheOnly,
 	)
@@ -1343,7 +1342,7 @@ func copySnapshots(context *cli.Context) {
 	destinationStorage.SetRateLimits(0, context.Int("upload-limit-rate"))
 
 	destinationManager := duplicacy.CreateBackupManager(destination.SnapshotID, destinationStorage, repository,
-		                                                  destinationPassword, "", "", false)
+		destinationPassword, "", "", false)
 	duplicacy.SavePassword(*destination, "password", destinationPassword)
 	destinationManager.SetupSnapshotCache(destination.Name)
 
@@ -1468,7 +1467,7 @@ func benchmark(context *cli.Context) {
 	if storage == nil {
 		return
 	}
-	duplicacy.Benchmark(repository, storage, int64(fileSize) * 1024 * 1024, chunkSize * 1024 * 1024, chunkCount, uploadThreads, downloadThreads)
+	duplicacy.Benchmark(repository, storage, int64(fileSize)*1024*1024, chunkSize*1024*1024, chunkCount, uploadThreads, downloadThreads)
 }
 
 func main() {
@@ -1599,7 +1598,6 @@ func main() {
 					Usage:    "the maximum number of entries kept in memory (defaults to 1M)",
 					Argument: "<number>",
 				},
-
 			},
 			Usage:     "Save a snapshot of the repository to the storage",
 			ArgsUsage: " ",
@@ -1659,7 +1657,7 @@ func main() {
 				cli.BoolFlag{
 					Name:  "persist",
 					Usage: "continue processing despite chunk errors or existing files (without -overwrite), reporting any affected files",
-        },
+				},
 				cli.StringFlag{
 					Name:     "key-passphrase",
 					Usage:    "the passphrase to decrypt the RSA private key",
@@ -2274,8 +2272,8 @@ func main() {
 			Usage: "add a comment to identify the process",
 		},
 		cli.StringSliceFlag{
-			Name:  "suppress, s",
-			Usage: "suppress logs with the specified id",
+			Name:     "suppress, s",
+			Usage:    "suppress logs with the specified id",
 			Argument: "<id>",
 		},
 		cli.BoolFlag{

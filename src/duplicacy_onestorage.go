@@ -21,13 +21,13 @@ type OneDriveStorage struct {
 
 // CreateOneDriveStorage creates an OneDrive storage object.
 func CreateOneDriveStorage(
-	tokenFile string, 
-	isBusiness bool, 
-	storagePath string, 
-	threads int, 
-	max_batch_requests int, 
-	client_id string, 
-	client_secret string, 
+	tokenFile string,
+	isBusiness bool,
+	storagePath string,
+	threads int,
+	max_batch_requests int,
+	client_id string,
+	client_secret string,
 	drive_id string,
 ) (storage *OneDriveStorage, err error) {
 
@@ -36,11 +36,11 @@ func CreateOneDriveStorage(
 	}
 
 	client, err := NewOneDriveClient(
-		tokenFile, 
-		isBusiness, 
-		max_batch_requests, 
-		client_id, 
-		client_secret, 
+		tokenFile,
+		isBusiness,
+		max_batch_requests,
+		client_id,
+		client_secret,
 		drive_id,
 	)
 	if err != nil {
@@ -94,7 +94,6 @@ func (storage *OneDriveStorage) convertFilePath(filePath string) string {
 	}
 	return filePath
 }
-
 
 // ListFiles return the list of files and subdirectories under 'dir' (non-recursively)
 func (storage *OneDriveStorage) ListFilesNotThreaded(threadIndex int, dir string) ([]string, []int64, error) {
@@ -201,7 +200,7 @@ func (storage *OneDriveStorage) ListFiles(threadIndex int, dir string) ([]string
 		return files, nil, nil
 	} else {
 		// Batched and threaded
-		lock := sync.Mutex {}
+		lock := sync.Mutex{}
 		allFiles := []string{}
 		allSizes := []int64{}
 
@@ -210,13 +209,13 @@ func (storage *OneDriveStorage) ListFiles(threadIndex int, dir string) ([]string
 		activeWorkers := 0
 
 		requests := []OneDriveListReqItem{
-			{Path:"chunks", 	URL:""},
-			{Path:"fossils", 	URL:""},
+			{Path: "chunks", URL: ""},
+			{Path: "fossils", URL: ""},
 		}
 
 		maxRequestsPerThread := 1
 		if storage.client.MaxBatchReqs > 1 {
-			// OneDrive Business works through Graph API 
+			// OneDrive Business works through Graph API
 			// which supports batch requests (20 is the max)
 			maxRequestsPerThread = storage.client.MaxBatchReqs
 		}
@@ -242,11 +241,11 @@ func (storage *OneDriveStorage) ListFiles(threadIndex int, dir string) ([]string
 
 					// send paging requests first
 					for _, pageReq := range newReqs {
-						requestChannel <- pageReq 
+						requestChannel <- pageReq
 					}
 
-					files := []string {}
-					sizes := []int64 {}
+					files := []string{}
+					sizes := []int64{}
 
 					for i, entries := range entriesPerReq {
 						LOG_DEBUG("ONE_STORAGE", "Listing %s; %d items returned", batchReqs[i].Path, len(entries.Entries))
@@ -265,7 +264,7 @@ func (storage *OneDriveStorage) ListFiles(threadIndex int, dir string) ([]string
 							} else {
 								recurseDirRequest := OneDriveListReqItem{
 									Path: batchReqs[i].Path + "/" + entry.Name,
-									URL: "",
+									URL:  "",
 								}
 								requestChannel <- recurseDirRequest
 							}
@@ -275,15 +274,15 @@ func (storage *OneDriveStorage) ListFiles(threadIndex int, dir string) ([]string
 					allFiles = append(allFiles, files...)
 					allSizes = append(allSizes, sizes...)
 					lock.Unlock()
-					requestChannel <- OneDriveListReqItem{Path:"", URL:""}
-				} (batchReqs)
+					requestChannel <- OneDriveListReqItem{Path: "", URL: ""}
+				}(batchReqs)
 			}
 
 			if activeWorkers > 0 {
 				select {
-				case err := <- errorChannel:
+				case err := <-errorChannel:
 					return nil, nil, err
-				case request := <- requestChannel:
+				case request := <-requestChannel:
 					if request.Path == "" {
 						activeWorkers--
 					} else {

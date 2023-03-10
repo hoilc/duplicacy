@@ -1470,6 +1470,24 @@ func benchmark(context *cli.Context) {
 	duplicacy.Benchmark(repository, storage, int64(fileSize)*1024*1024, chunkSize*1024*1024, chunkCount, uploadThreads, downloadThreads)
 }
 
+func authorize(context *cli.Context) {
+	setGlobalOptions(context)
+	defer duplicacy.CatchLogException()
+
+	if len(context.Args()) != 1 {
+		fmt.Fprintf(context.App.Writer, "The %s command requires a storage type argument.\n\n", context.Command.Name)
+		cli.ShowCommandHelp(context, context.Command.Name)
+		os.Exit(ArgumentExitCode)
+	}
+
+	preference := duplicacy.Preference{
+		Name:       "default",
+		SnapshotID: "default",
+	}
+
+	duplicacy.Authorize(preference)
+}
+
 func main() {
 
 	duplicacy.SetLoggingLevel(duplicacy.INFO)
@@ -2233,6 +2251,14 @@ func main() {
 			Usage:     "Run a set of benchmarks to test download and upload speeds",
 			ArgsUsage: " ",
 			Action:    benchmark,
+		},
+
+		{
+			Name:      "authorize",
+			Flags:     []cli.Flag{},
+			Usage:     "Authorize by custom credentials for Onedrive etc.",
+			ArgsUsage: "odb",
+			Action:    authorize,
 		},
 	}
 

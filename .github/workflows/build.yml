@@ -1,0 +1,48 @@
+name: Build
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [darwin, linux, windows]
+        arch: [arm64, amd64]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+      - name: Build
+        run: |
+          sed -i "s/unofficial/hoilc-${GITHUB_SHA::7}/g" duplicacy/duplicacy_main.go
+          GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} go build -o /tmp/duplicacy duplicacy/duplicacy_main.go
+          chmod +x /tmp/duplicacy
+          cd /tmp/
+          tar -zcvf ${GITHUB_WORKSPACE}/duplicacy_${{ matrix.os }}_${{ matrix.arch }}.tar.gz duplicacy*
+      - name: Update tag
+        uses: richardsimko/update-tag@v1.0.5
+        if: strategy.job-index == 0
+        with:
+          tag_name: nightly
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Delete old binaries
+        uses: mknejp/delete-release-assets@v1
+        with:
+          token: ${{ github.token }}
+          tag: nightly
+          fail-if-no-assets: false
+          fail-if-no-release: false
+          assets: "duplicacy_${{ matrix.os }}_${{ matrix.arch }}*"
+      - name: Upload new binaries
+        uses: softprops/action-gh-release@v1
+        with:
+          name: "Nightly"
+          tag_name: "nightly"
+          files: "duplicacy_*.tar.gz"

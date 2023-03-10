@@ -50,3 +50,5 @@ require (
 	google.golang.org/genproto v0.0.0-20200409111301-baae70f3302d // indirect
 	google.golang.org/grpc v1.28.1 // indirect
 )
+
+replace github.com/gilbertchen/go-ole => github.com/go-ole/go-ole v1.2.6

@@ -1028,10 +1028,10 @@ func (manager *SnapshotManager) GetSnapshotChunkIDMapWithHashes(
 
 // ListSnapshots shows the information about a snapshot.
 func (manager *SnapshotManager) ListSnapshots(snapshotID string, revisionsToList []int, tag string,
-	showFiles bool, showChunks bool) int {
+	showFiles bool, showChunks bool, reverseList bool, idOnly bool) int {
 
-	LOG_DEBUG("LIST_PARAMETERS", "id: %s, revisions: %v, tag: %s, showFiles: %t, showChunks: %t",
-		snapshotID, revisionsToList, tag, showFiles, showChunks)
+	LOG_DEBUG("LIST_PARAMETERS", "id: %s, revisions: %v, tag: %s, showFiles: %t, showChunks: %t, reverseList: %t, idOnly: %t",
+		snapshotID, revisionsToList, tag, showFiles, showChunks, reverseList, idOnly)
 
 	manager.CreateChunkOperator(false, false, 1, false)
 	defer func() {
@@ -1041,6 +1041,15 @@ func (manager *SnapshotManager) ListSnapshots(snapshotID string, revisionsToList
 
 	var snapshotIDs []string
 	var err error
+
+	if idOnly {
+		snapshotIDs, err = manager.ListSnapshotIDs()
+		LOG_INFO("SNAPSHOT_LIST", "Found %v snapshot id(s):", len(snapshotIDs))
+		for _, snapshotID := range snapshotIDs {
+			LOG_INFO("SNAPSHOT_LIST", snapshotID)
+		}
+		return 0
+	}
 
 	if snapshotID == "" {
 		snapshotIDs, err = manager.ListSnapshotIDs()
@@ -1064,6 +1073,10 @@ func (manager *SnapshotManager) ListSnapshots(snapshotID string, revisionsToList
 				LOG_ERROR("SNAPSHOT_LIST", "Failed to list all revisions for snapshot %s: %v", snapshotID, err)
 				return 0
 			}
+		}
+
+		if reverseList {
+			sort.Sort(sort.Reverse(sort.IntSlice(revisions)))
 		}
 
 		for _, revision := range revisions {

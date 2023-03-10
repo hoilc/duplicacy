@@ -919,12 +919,14 @@ func listSnapshots(context *cli.Context) {
 
 	showFiles := context.Bool("files")
 	showChunks := context.Bool("chunks")
+	reverseList := context.Bool("reverse")
+	idOnly := context.Bool("id-only")
 
 	// list doesn't need to decrypt file chunks; but we need -key here so we can reset the passphrase for the private key
 	loadRSAPrivateKey(context.String("key"), "", preference, backupManager, resetPassword)
 
 	backupManager.SetupSnapshotCache(preference.Name)
-	backupManager.SnapshotManager.ListSnapshots(id, revisions, tag, showFiles, showChunks)
+	backupManager.SnapshotManager.ListSnapshots(id, revisions, tag, showFiles, showChunks, reverseList, idOnly)
 
 	runScript(context, preference.Name, "post")
 }
@@ -1730,6 +1732,14 @@ func main() {
 					Name:     "key",
 					Usage:    "the RSA private key to decrypt file chunks",
 					Argument: "<private key>",
+				},
+				cli.BoolFlag{
+					Name:  "reverse",
+					Usage: "list snapshots desc by reversion",
+				},
+				cli.BoolFlag{
+					Name:  "id-only",
+					Usage: "list all existing snapshot ids",
 				},
 			},
 			Usage:     "List snapshots",

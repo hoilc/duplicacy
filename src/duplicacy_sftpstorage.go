@@ -49,7 +49,7 @@ func CreateSFTPStorageWithPassword(server string, port int, username string, sto
 func CreateSFTPStorage(compatibilityMode bool, server string, port int, username string, storageDir string, minimumNesting int,
 	authMethods []ssh.AuthMethod,
 	hostKeyCallback func(hostname string, remote net.Addr,
-	key ssh.PublicKey) error, threads int) (storage *SFTPStorage, err error) {
+		key ssh.PublicKey) error, threads int) (storage *SFTPStorage, err error) {
 
 	sftpConfig := &ssh.ClientConfig{
 		User:            username,
@@ -144,14 +144,14 @@ func (storage *SFTPStorage) retry(f func() error) error {
 			storage.clientLock.Lock()
 			connection, err := ssh.Dial("tcp", storage.serverAddress, storage.sftpConfig)
 			if err != nil {
-				LOG_WARN("SFT_RECONNECT", "Failed to connect to %s: %v; retrying", storage.serverAddress, err)
+				LOG_WARN("SFTP_RECONNECT", "Failed to connect to %s: %v; retrying", storage.serverAddress, err)
 				storage.clientLock.Unlock()
 				continue
 			}
 
 			client, err := sftp.NewClient(connection)
 			if err != nil {
-				LOG_WARN("SFT_RECONNECT", "Failed to create a new SFTP client to %s: %v; retrying", storage.serverAddress, err)
+				LOG_WARN("SFTP_RECONNECT", "Failed to create a new SFTP client to %s: %v; retrying", storage.serverAddress, err)
 				connection.Close()
 				storage.clientLock.Unlock()
 				continue

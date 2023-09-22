@@ -471,7 +471,7 @@ func (manager *SnapshotManager) CleanSnapshotCache(latestSnapshot *Snapshot, all
 
 	allFiles, _ := manager.ListAllFiles(manager.snapshotCache, chunkDir)
 	for _, file := range allFiles {
-		if file[len(file)-1] != '/' {
+		if len(file) > 0 && file[len(file)-1] != '/' {
 			chunkID := strings.Replace(file, "/", "", -1)
 			if _, found := chunks[chunkID]; !found {
 				LOG_DEBUG("SNAPSHOT_CLEAN", "Delete chunk %s from the snapshot cache", chunkID)
@@ -1612,6 +1612,8 @@ func (manager *SnapshotManager) CheckSnapshots(
 	numberOfVerifiedChunks := len(verifiedChunks)
 
 	saveVerifiedChunks := func() {
+		verifiedChunksLock.Lock()
+		defer verifiedChunksLock.Unlock()
 		if len(verifiedChunks) > numberOfVerifiedChunks {
 			var description []byte
 			description, err = json.Marshal(verifiedChunks)
@@ -3078,7 +3080,7 @@ func (manager *SnapshotManager) pruneSnapshotsExhaustive(
 		}
 		file := sa[0]
 
-		if file[len(file)-1] == '/' {
+		if len(file) == 0 || file[len(file)-1] == '/' {
 			continue
 		}
 

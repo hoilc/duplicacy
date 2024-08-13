@@ -2,10 +2,8 @@
 // Free for personal use and commercial trial
 // Commercial use requires per-user licenses available from https://duplicacy.com
 //
-//
 // This storage backend is based on the work by Yuri Karamani from https://github.com/karamani/webdavclnt,
 // released under the MIT license.
-//
 package duplicacy
 
 import (
@@ -64,6 +62,11 @@ func CreateWebDAVStorage(host string, port int, username string, password string
 		client:         http.DefaultClient,
 		threads:        threads,
 		directoryCache: make(map[string]int),
+	}
+
+	storage.client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		req.Header.Set("User-Agent", "curl/8.4.0")
+		return nil
 	}
 
 	exist, isDir, _, err := storage.GetFileInfo(0, storageDir)
@@ -137,6 +140,8 @@ func (storage *WebDAVStorage) sendRequest(method string, uri string, depth int, 
 			headers["Content-Type"] = "application/octet-stream"
 			dataReader = bytes.NewReader(data)
 		}
+
+		headers["User-Agent"] = "curl/8.4.0"
 
 		request, err := http.NewRequest(method, storage.createConnectionString(uri), dataReader)
 		if err != nil {

@@ -66,11 +66,6 @@ func CreateWebDAVStorage(host string, port int, username string, password string
 		directoryCache: make(map[string]int),
 	}
 
-	// Make sure it doesn't follow redirect
-	storage.client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
-		return http.ErrUseLastResponse
-	}
-
 	exist, isDir, _, err := storage.GetFileInfo(0, storageDir)
 	if err != nil {
 		return nil, err
